@@ -1,44 +1,36 @@
-# cluster_publisher.py
-import time
 from kafka import KafkaConsumer, KafkaProducer
 import json
 import sys
 
-# Get cluster topic from command line arguments
+# Ensure the cluster topic is provided as a command-line argument
 if len(sys.argv) < 2:
     print("Usage: python cluster_publisher.py <cluster_topic>")
     sys.exit(1)
 
-cluster_topic = sys.argv[1]  # Topic name for this cluster
+# Get the cluster topic from the command-line arguments
+cluster_topic = sys.argv[1]
 
-# Kafka configuration
-kafka_bootstrap_servers = 'localhost:9092'
-subscriber_topic = f"{cluster_topic}_subscribers"  # Subscribers' topic
+# Kafka Configuration
+KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
+SUBSCRIBER_TOPIC = f"{cluster_topic}_subscribers"
 
-# Initialize Kafka consumer to read data for this cluster
+# Initialize Kafka consumer to listen to the data published to the cluster topic
 consumer = KafkaConsumer(
     cluster_topic,
-    bootstrap_servers=kafka_bootstrap_servers,
+    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
 )
 
-# Initialize Kafka producer to publish to subscribers in the cluster
+# Initialize Kafka producer to publish data to the subscriber topic
 producer = KafkaProducer(
-    bootstrap_servers=kafka_bootstrap_servers,
+    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
     value_serializer=lambda x: json.dumps(x).encode('utf-8')
 )
 
-print(f"Cluster Publisher for {cluster_topic} is running...")
-
-# Loop to read from cluster_topic and publish to subscriber topic
+# Continuously listen for messages on the cluster topic and forward them
 for message in consumer:
     data = message.value
-    print(f"Cluster Publisher received data for {cluster_topic}: {data}")
-
-    # Publish to subscriber topic
-    producer.send(subscriber_topic, value=data)
-    print(f"Published to {subscriber_topic}: {data}")
-
+    producer.send(SUBSCRIBER_TOPIC, value=data)
+    print(f"Cluster Publisher received data: {data}")
     producer.flush()
-    time.sleep(0.1)  # Slight delay for demonstration purposes
 

@@ -1,31 +1,29 @@
-import socketio
-import sys
+from kafka import KafkaConsumer
+import json
+import time
 
-if len(sys.argv) != 2:
-    print("Usage: python subscriber.py <cluster_id>")
-    sys.exit(1)
+KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
+SUBSCRIBER_TOPIC = 'Cluster1_subscribers'
 
-cluster_id = sys.argv[1]
+consumer = KafkaConsumer(
+    SUBSCRIBER_TOPIC,
+    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+)
 
-# Initialize Socket.IO client
-sio = socketio.Client()
+emoji_counts = {"😂": 0, "😭": 0, "🥳": 0, "😍": 0, "😡": 0}
 
-@sio.event
-def connect():
-    print(f"Connected to cluster {cluster_id}")
+print("Subscriber listening to cluster data...")
 
-@sio.event
-def reaction_update(data):
-    print(f"Received update for cluster {cluster_id}: {data}")
+for message in consumer:
+    data = message.value
+    emoji = data['emoji_type']
+    
+    if emoji in emoji_counts:
+        emoji_counts[emoji] += data['compressed_count']
 
-@sio.event
-def disconnect():
-    print("Disconnected from server")
-
-try:
-    sio.connect('http://localhost:5001')
-    sio.emit('join', {"cluster_id": cluster_id})
-    sio.wait()
-except Exception as e:
-    print(f"Error: {e}")
+    # Display the emoji stream
+    compressed_stream = "".join([emoji * emoji_counts[emoji] for emoji in emoji_counts])
+    print(f"Current Emoji Stream: {compressed_stream}", end="\r")
+    time.sleep(0.1)
 
