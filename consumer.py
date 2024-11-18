@@ -52,3 +52,5 @@ agg_query = agg_df.writeStream \
 
 agg_query.awaitTermination()
 
+
+
