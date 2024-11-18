@@ -1,38 +1,34 @@
-from kafka import KafkaConsumer, KafkaProducer
+from flask import Flask, jsonify
+from kafka import KafkaProducer
 import json
-import random
 
-# Kafka config
-KAFKA_BOOTSTRAP_SERVERS = 'localhost:9092'
-INPUT_TOPIC = 'aggregated-emoji-topic'
+app = Flask(__name__)
 
-# Initialize Kafka consumer for aggregated data
-consumer = KafkaConsumer(
-    INPUT_TOPIC,
-    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
-)
+# Kafka settings
+KAFKA_BROKER = "localhost:9092"
+MAIN_TOPIC = "main-pub-topic"  # This will be the topic where the main publisher sends aggregated data
 
-# Initialize Kafka producer for sending data to cluster publishers
+# Kafka producer to send aggregated data to cluster publishers
 producer = KafkaProducer(
-    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-    value_serializer=lambda x: json.dumps(x).encode('utf-8')
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-# Define available clusters
-CLUSTERS = ["Cluster1", "Cluster2", "Cluster3", "Cluster4", "Cluster5"]
+@app.route('/publish-aggregated-data', methods=['POST'])
+def publish_aggregated_data():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "Invalid input, data is required"}), 400
+        
+        # Publish the aggregated data to Kafka (main publisher -> cluster publishers)
+        producer.send(MAIN_TOPIC, value=data)
+        producer.flush()
+        
+        return jsonify({"status": "success", "message": "Aggregated data sent to cluster publishers"}), 200
 
-def assign_to_cluster(data):
-    cluster = random.choice(CLUSTERS)  # Simple load balancing
-    producer.send(cluster, value=data)  # Send data to the assigned cluster topic
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-print("Main Publisher is listening to aggregated emoji data...")
-
-# Listen for incoming aggregated emoji data
-for message in consumer:
-    data = message.value
-    print(f"Main Publisher received data: {data}")
-    
-    # Assign data to a cluster dynamically
-    assign_to_cluster(data)
-
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=6000, debug=True)  # Main publisher API
