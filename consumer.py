@@ -1,49 +1,56 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, window, count, expr
-from pyspark.sql.types import StructType, StringType, TimestampType, StructField
+from pyspark.sql.functions import col, from_json, count
+from pyspark.sql.types import StructType, StringType
+from tabulate import tabulate
 
-# Initialize Spark session
 spark = SparkSession.builder \
-    .appName("KafkaSparkConsumer") \
-    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2") \
+    .appName("EmojiProcessor") \
+    .master("local[*]") \
+    .config("spark.executor.memory", "8g") \
+    .config("spark.driver.memory", "4g") \
+    .config("spark.memory.fraction", "0.9") \
+    .config("spark.sql.shuffle.partitions", "200") \
     .getOrCreate()
 
-# Schema for incoming emoji data
-schema = StructType([
-    StructField("user_id", StringType(), True),
-    StructField("emoji_type", StringType(), True),
-    StructField("timestamp", TimestampType(), True)
-])
+spark.sparkContext.setLogLevel("ERROR")
 
-# Read from Kafka
-kafka_bootstrap_servers = "localhost:9092"
-input_topic = "emoji_data_topic"
+KAFKA_BROKER = "localhost:9092"
+TOPIC = "emoji-topic"
+CONSUMER_GROUP = "emoji-stream"
 
-df = spark.readStream \
+schema = StructType() \
+    .add("user_id", StringType()) \
+    .add("emoji", StringType()) \
+    .add("timestamp", StringType())
+
+raw_stream = spark.readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", kafka_bootstrap_servers) \
-    .option("subscribe", input_topic) \
-    .option("startingOffsets", "earliest") \
+    .option("kafka.bootstrap.servers", KAFKA_BROKER) \
+    .option("subscribe", TOPIC) \
+    .option("kafka.group.id", CONSUMER_GROUP) \
+    .option("maxOffsetsPerTrigger", 2000) \
     .load()
 
-# Transform data
-emoji_df = df.selectExpr("CAST(value AS STRING)") \
-    .select(from_json(col("value").cast("string"), schema).alias("data")) \
+parsed_stream = raw_stream.selectExpr("CAST(value AS STRING)") \
+    .select(from_json(col("value"), schema).alias("data")) \
     .select("data.*")
 
-# Aggregation: count emojis by type in 2-second windows
-agg_df = emoji_df \
-    .groupBy(window("timestamp", "2 seconds"), "emoji_type") \
-    .agg(count("emoji_type").alias("emoji_count")) \
-    .select("emoji_type", (col("emoji_count") / 1000).cast("int").alias("compressed_count"))
+def process_batch(df, batch_id):
+    if not df.rdd.isEmpty():
+        emoji_counts = df.groupBy("emoji").agg(count("*").alias("count"))
+        results = emoji_counts.collect()
+        
+        if results:
+            headers = ["Emoji", "Count"]
+            table = tabulate(results, headers=headers, tablefmt="grid")
+            print(f"Processing batch {batch_id}")
+            print(table)
+            print(f"Total records in this batch: {df.count()}")
 
-# Output to console (or you can send it back to Kafka if needed)
-query = agg_df.writeStream \
+query = parsed_stream.writeStream \
+    .foreachBatch(process_batch) \
     .outputMode("update") \
-    .format("console") \
     .trigger(processingTime="2 seconds") \
-    .option("truncate", "false") \
     .start()
 
 query.awaitTermination()
-
