@@ -52,6 +52,5 @@ query = parsed_stream.writeStream \
     .outputMode("update") \
     .trigger(processingTime="2 seconds") \
     .start()
-)
 
 query.awaitTermination()
