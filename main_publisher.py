@@ -23,6 +23,7 @@ KAFKA_BROKER = "localhost:9092"
 INPUT_TOPIC = "emoji-topic"
 OUTPUT_TOPIC = "main-pub-topic"
 CONSUMER_GROUP = "emoji-stream"
+COMPRESSION = 1000
 
 # Define Schema for Parsing
 schema = StructType() \
@@ -66,7 +67,7 @@ def process_batch(df, batch_id):
             
             # Send Aggregated Data to Kafka
             for row in results:
-                data = {"emoji": row["emoji"], "count": math.ceil(row["count"] / 10)}
+                data = {"emoji": row["emoji"], "count": math.ceil(row["count"] / COMPRESSION)}
                 print(f"Sending to main-pub-topic: {data}")
                 producer.send(OUTPUT_TOPIC, value=data)
             producer.flush()
