@@ -10,7 +10,8 @@ TOPIC = "emoji-topic"
 
 producer = KafkaProducer(
     bootstrap_servers=KAFKA_BROKER,
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+    linger_ms=500
 )
 
 @app.route('/send-emoji', methods=['POST'])
@@ -36,7 +37,6 @@ def send_emoji():
         }
 
         producer.send(TOPIC, value=message)
-        producer.flush()
 
         return jsonify({"status": "success", "message": "Emoji sent to Kafka"}), 200
 

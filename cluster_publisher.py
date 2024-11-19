@@ -11,7 +11,7 @@ CLUSTER_TOPIC = os.getenv("CLUSTER_TOPIC", "cluster1-emoji-topic")
 consumer = KafkaConsumer(
     MAIN_TOPIC,
     bootstrap_servers=KAFKA_BROKER,
-    group_id="cluster-publishers",  # Shared group ensures all clusters consume same data
+    group_id=CLUSTER_TOPIC,  # Shared group ensures all clusters consume same data
     auto_offset_reset="earliest"
 )
 

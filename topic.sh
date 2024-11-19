@@ -11,6 +11,7 @@ TOPIC_NAME_1="emoji-topic"
 TOPIC_NAME_2="main-pub-topic"
 TOPIC_NAME_3="cluster1-emoji-topic"
 TOPIC_NAME_4="cluster2-emoji-topic"
+TOPIC_NAME_5="cluster3-emoji-topic"
 
 # Function to delete a Kafka topic
 delete_topic() {
@@ -30,12 +31,14 @@ delete_topic $TOPIC_NAME_1
 delete_topic $TOPIC_NAME_2
 delete_topic $TOPIC_NAME_3
 delete_topic $TOPIC_NAME_4
+delete_topic $TOPIC_NAME_5
 
 # Create the topics with replication-factor 1
 create_topic $TOPIC_NAME_1
 create_topic $TOPIC_NAME_2
 create_topic $TOPIC_NAME_3
 create_topic $TOPIC_NAME_4
+create_topic $TOPIC_NAME_5
 
 # List all Kafka topics
 $KAFKA_DIR/bin/kafka-topics.sh --list --bootstrap-server $BROKER
