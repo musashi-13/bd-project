@@ -30,6 +30,6 @@ _reads from main-pub-topic. there are 3 clusters each with its own topic as clus
 
 _reads from the cluster topic specified in command and gets ports assigned based on it. each subscriber has 3 functions, notify-client to send emoji, register to register the client and deregister to do the opposite._
 
-* `PORT=8001 client.py`
+* `PORT=8001 subscriber=1 client.py`
 
 _sends emojis to app.py that is listening to /send-emoji and receives emojis from the subscriber it is registered to. registration happens via polling since each subscriber can have only 2 clients. prints recieved emojis as a stream_
