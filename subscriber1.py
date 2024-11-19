@@ -3,13 +3,19 @@ from kafka import KafkaConsumer
 import json
 import threading
 import requests
+import os
 
 app = Flask(__name__)
 
 KAFKA_BROKER = "localhost:9092"
-CLUSTER_TOPIC = "cluster1-emoji-topic"  # Change for the second subscriber
-PORT = 7001  # Change for the second subscriber
-
+CLUSTER_TOPIC = os.getenv("CLUSTER_TOPIC", "cluster1-emoji-topic")
+if CLUSTER_TOPIC == 'cluster1-emoji-topic':
+    PORT=7001
+if CLUSTER_TOPIC == 'cluster2-emoji-topic':
+    PORT=7011
+if CLUSTER_TOPIC == 'cluster3-emoji-topic':
+    PORT=7021
+MAX_CLIENTS = 2
 # List to store registered client endpoints
 registered_clients = []
 
@@ -50,6 +56,7 @@ def register_client():
 
     if client_url not in registered_clients:
         registered_clients.append(client_url)
+        print("A new client has subscribed. Client URL:", client_url)
         return jsonify({"status": "registered", "client_url": client_url}), 200
     else:
         return jsonify({"status": "already_registered", "client_url": client_url}), 200
@@ -64,9 +71,17 @@ def deregister_client():
 
     if client_url in registered_clients:
         registered_clients.remove(client_url)
+        print("A client has unsubscribed. Client URL:", client_url)
         return jsonify({"status": "deregistered", "client_url": client_url}), 200
     else:
         return jsonify({"status": "not_found", "client_url": client_url}), 404
+
+@app.route("/status", methods=["GET"])
+def status():
+    """
+    Endpoint to provide subscriber capacity status.
+    """
+    return jsonify({"available_slots": MAX_CLIENTS - len(registered_clients)})
 
 if __name__ == "__main__":
     # Start the Kafka consumer in a separate thread
