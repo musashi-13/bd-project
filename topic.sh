@@ -9,7 +9,8 @@ BROKER="localhost:9092"
 # Topic names
 TOPIC_NAME_1="emoji-topic"
 TOPIC_NAME_2="main-pub-topic"
-TOPIC_NAME_3="cluster-emoji-topic"
+TOPIC_NAME_3="cluster1-emoji-topic"
+TOPIC_NAME_4="cluster2-emoji-topic"
 
 # Function to delete a Kafka topic
 delete_topic() {
@@ -22,14 +23,19 @@ delete_topic() {
 create_topic() {
     echo "Creating topic: $1"
     $KAFKA_DIR/bin/kafka-topics.sh --create --topic $1 --bootstrap-server $BROKER --partitions 3 --replication-factor 1
-    echo "Topic $1 created."
 }
 
-# Create the topics
+# Delete existing topics
 delete_topic $TOPIC_NAME_1
+delete_topic $TOPIC_NAME_2
+delete_topic $TOPIC_NAME_3
+delete_topic $TOPIC_NAME_4
+
+# Create the topics with replication-factor 1
 create_topic $TOPIC_NAME_1
-create_topic $TOPIC_NAME_2  # main-pub-topic for main publisher
-create_topic $TOPIC_NAME_3  # cluster-emoji-topic for cluster publishers
+create_topic $TOPIC_NAME_2
+create_topic $TOPIC_NAME_3
+create_topic $TOPIC_NAME_4
 
 # List all Kafka topics
 $KAFKA_DIR/bin/kafka-topics.sh --list --bootstrap-server $BROKER
