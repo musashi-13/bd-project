@@ -1,4 +1,8 @@
-# RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture
+# Sem 6 Big Data Project using Apache Spark and Kafka
+
+A system for managing large streams of emojis where the emojis get sorted, aggregated and broadcasted in a kafka pub-sub model.
+
+## RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture
 
 ## Team Members
 * PES1UG22CS189 - Dinesh Kumar L C
