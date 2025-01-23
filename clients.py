@@ -8,10 +8,10 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 # API endpoint URL (ensure this matches the Gunicorn host/port)
-url = 'http://10.0.2.15:5000/submit_emoji'
+url = 'http://127.0.0.1:5000/submit_emoji'
 
 # Emoji data pool for simulation
-emojis = ["😊", "😂", "😢", "❤️", "👍", "🎉", "🔥", "😎", "🤔", "👏"]
+emojis = ["😊"]
 
 # Setup retry strategy for requests
 session = requests.Session()
@@ -20,7 +20,7 @@ session.mount('http://', HTTPAdapter(max_retries=retries))
 
 # Function to simulate a client sending data
 def send_emoji_data(client_id):
-    for _ in range(200):  # Each client sends 50 messages
+    for _ in range(60):  # Each client sends 50 messages
         data = {
             "user_id": str(client_id),
             "emoji_type": random.choice(emojis),
