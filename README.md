@@ -1,4 +1,7 @@
-# RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture
+# Sem 6 Big Data Project using Apache Spark and Kafka
+
+## RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture
+Fork of [Unversity Repo](https://github.com/Cloud-Computing-Big-Data/RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture)
 
 ## Team Members
 * PES1UG22CS189 - Dinesh Kumar L C - [dineshhdini](https://github.com/dineshhdini)
