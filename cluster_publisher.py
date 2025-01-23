@@ -1,44 +1,32 @@
-# cluster_publisher.py
-import time
+import os
 from kafka import KafkaConsumer, KafkaProducer
 import json
-import sys
 
-# Get cluster topic from command line arguments
-if len(sys.argv) < 2:
-    print("Usage: python cluster_publisher.py <cluster_topic>")
-    sys.exit(1)
+KAFKA_BROKER = "localhost:9092"
+MAIN_TOPIC = "main-pub-topic"
 
-cluster_topic = sys.argv[1]  # Topic name for this cluster
+# Use environment variable or argument to identify the cluster
+CLUSTER_TOPIC = os.getenv("CLUSTER_TOPIC", "cluster1-emoji-topic")
 
-# Kafka configuration
-kafka_bootstrap_servers = 'localhost:9092'
-subscriber_topic = f"{cluster_topic}_subscribers"  # Subscribers' topic
-
-# Initialize Kafka consumer to read data for this cluster
 consumer = KafkaConsumer(
-    cluster_topic,
-    bootstrap_servers=kafka_bootstrap_servers,
-    value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+    MAIN_TOPIC,
+    bootstrap_servers=KAFKA_BROKER,
+    group_id=CLUSTER_TOPIC,  # Shared group ensures all clusters consume same data
+    auto_offset_reset="earliest"
 )
 
-# Initialize Kafka producer to publish to subscribers in the cluster
 producer = KafkaProducer(
-    bootstrap_servers=kafka_bootstrap_servers,
-    value_serializer=lambda x: json.dumps(x).encode('utf-8')
+    bootstrap_servers=KAFKA_BROKER,
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-print(f"Cluster Publisher for {cluster_topic} is running...")
+def distribute_data():
+    for message in consumer:
+        # Consume from main-pub-topic and forward to cluster-specific topic
+        data = json.loads(message.value.decode('utf-8'))
+        producer.send(CLUSTER_TOPIC, value=data)
+        producer.flush()
+        print(f"Forwarded data to {CLUSTER_TOPIC}: {data}")
 
-# Loop to read from cluster_topic and publish to subscriber topic
-for message in consumer:
-    data = message.value
-    print(f"Cluster Publisher received data for {cluster_topic}: {data}")
-
-    # Publish to subscriber topic
-    producer.send(subscriber_topic, value=data)
-    print(f"Published to {subscriber_topic}: {data}")
-
-    producer.flush()
-    time.sleep(0.1)  # Slight delay for demonstration purposes
-
+if __name__ == "__main__":
+    distribute_data()
