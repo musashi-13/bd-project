@@ -1,4 +1,4 @@
-# Sem 6 Big Data Project using Apache Spark and Kafka
+# Sem 5 Big Data Project using Apache Spark and Kafka
 
 ## RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture
 Fork of [Unversity Repo](https://github.com/Cloud-Computing-Big-Data/RR-Team-5-emostream-concurrent-emoji-broadcast-over-event-driven-architecture)
